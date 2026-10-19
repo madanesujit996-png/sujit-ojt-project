@@ -1,0 +1,525 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Travel Planner Using API</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #f2f7f6;
+    color: #243746;
+}
+header {
+    background: linear-gradient(120deg, #087f8c, #21a179);
+    color: white;
+    text-align: center;
+    padding: 35px 15px;
+}
+header h1 {
+    margin: 0 0 10px;
+}
+.container {
+    max-width: 1000px;
+    margin: 25px auto;
+    padding: 0 15px;
+}
+.card {
+    background: white;
+    padding: 22px;
+    margin-bottom: 20px;
+    border-radius: 14px;
+    box-shadow: 0 4px 15px #0000000d;
+}
+h2 {
+    color: #087f8c;
+    margin-top: 0;
+}
+input, select {
+    padding: 12px;
+    border: 1px solid #ccd8dc;
+    border-radius: 7px;
+    font-size: 15px;
+    width: 100%;
+    margin: 7px 0;
+}
+button {
+    background: #087f8c;
+    color: white;
+    border: none;
+    border-radius: 7px;
+    padding: 12px 18px;
+    cursor: pointer;
+    margin-top: 8px;
+}
+button:hover {
+    background: #065e67;
+}
+.search-row {
+    display: flex;
+    gap: 10px;
+}
+.search-row input {
+    flex: 1;
+}
+.search-row button {
+    margin-top: 7px;
+}
+.weather {
+    background: #e5f7f5;
+    padding: 18px;
+    border-radius: 10px;
+    margin-top: 15px;
+}
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 15px;
+}
+.place {
+    background: #f6faf9;
+    border: 1px solid #e0ece8;
+    border-radius: 10px;
+    padding: 15px;
+}
+.place h3 {
+    margin-top: 0;
+}
+.place button {
+    margin-right: 5px;
+}
+li {
+    margin: 12px 0;
+    overflow-wrap: anywhere;
+}
+.remove {
+    background: #c0392b;
+    padding: 7px 10px;
+}
+iframe {
+    width: 100%;
+    height: 350px;
+    border: 0;
+    border-radius: 10px;
+}
+footer {
+    background: #183d43;
+    color: white;
+    text-align: center;
+    padding: 20px;
+}
+@media(max-width: 500px) {
+    .search-row {
+        flex-direction: column;
+        gap: 0;
+    }
+    .search-row button {
+        margin-top: 0;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <h1>✈ Travel Planner</h1>
+    <p>Explore destinations, check weather and plan your journey</p>
+</header>
+
+<main class="container">
+
+    <section class="card">
+        <h2>Find Your Destination</h2>
+        <form id="searchForm">
+            <div class="search-row">
+                <input id="city" type="text"
+                    placeholder="Enter city (e.g. Mumbai)"
+                    value="Mumbai" required>
+                <button type="submit">Search</button>
+            </div>
+        </form>
+        <p id="status" role="status">
+            Search for a city to get started.
+        </p>
+
+        <div id="weather" class="weather" hidden></div>
+    </section>
+
+    <section class="card">
+        <h2>Tourist Places</h2>
+        <p>Sample attractions for your selected destination.
+           Verify local details before travelling.</p>
+        <div id="places" class="grid">
+            <div class="place">
+                <h3>Gateway of India</h3>
+                <p>Famous waterfront landmark in Mumbai.</p>
+                <button type="button"
+                    onclick="addActivity('Visit Gateway of India')">
+                    Add to Plan
+                </button>
+            </div>
+            <div class="place">
+                <h3>Marine Drive</h3>
+                <p>Popular seaside promenade.</p>
+                <button type="button"
+                    onclick="addActivity('Visit Marine Drive')">
+                    Add to Plan
+                </button>
+            </div>
+            <div class="place">
+                <h3>Local Sightseeing</h3>
+                <p>Explore local attractions and culture.</p>
+                <button type="button"
+                    onclick="addActivity('Local sightseeing')">
+                    Add to Plan
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <section class="card">
+        <h2>Plan Your Trip</h2>
+        <label for="tripDate">Travel Date</label>
+        <input id="tripDate" type="date">
+
+        <label for="budget">Estimated Budget (₹)</label>
+        <input id="budget" type="number" min="0"
+            placeholder="Enter your budget">
+
+        <label for="activity">Activity</label>
+        <input id="activity" type="text"
+            placeholder="e.g. Visit a museum">
+
+        <button type="button" onclick="addCustomActivity()">
+            Add Activity
+        </button>
+
+        <h3>Your Itinerary</h3>
+        <p id="tripDetails">No trip details added yet.</p>
+        <ol id="itinerary"></ol>
+
+        <button type="button" onclick="savePlan()">Save Plan</button>
+        <button type="button" onclick="copyPlan()">Copy Plan</button>
+        <button type="button" onclick="clearPlan()">
+            Clear Plan
+        </button>
+        <p id="planStatus" role="status"></p>
+    </section>
+
+    <section class="card">
+        <h2>Explore on Map</h2>
+        <p id="mapCaption">Map of Mumbai</p>
+        <iframe id="map"
+            title="Destination map"
+            src="https://www.openstreetmap.org/export/embed.html?bbox=72.80%2C18.90%2C73.00%2C19.15&amp;layer=mapnik">
+        </iframe>
+        <p>
+            <a id="mapLink"
+               href="https://www.openstreetmap.org/"
+               target="_blank" rel="noopener">
+               Open map
+            </a>
+        </p>
+    </section>
+
+</main>
+
+<footer>
+    <p>Travel Planner Using API | College Project</p>
+    <p>Weather data: Open-Meteo | Maps: OpenStreetMap</p>
+</footer>
+
+<script>
+let currentCity = "Mumbai";
+let activities = [];
+
+const $ = id => document.getElementById(id);
+
+const samplePlaces = {
+    "mumbai": [
+        ["Gateway of India", "Historic waterfront landmark."],
+        ["Marine Drive", "Seaside promenade."],
+        ["Chhatrapati Shivaji Maharaj Vastu Sangrahalaya",
+         "Museum of art and history."]
+    ],
+    "pune": [
+        ["Shaniwar Wada", "Historic fortification."],
+        ["Aga Khan Palace", "Historic palace and museum."],
+        ["Sinhagad Fort", "Popular hill fort."]
+    ],
+    "delhi": [
+        ["India Gate", "War memorial."],
+        ["Red Fort", "Historic Mughal fort."],
+        ["Qutub Minar", "Historic minaret."]
+    ],
+    "kolhapur": [
+        ["Mahalaxmi Temple", "Famous temple."],
+        ["New Palace", "Historic palace and museum."],
+        ["Rankala Lake", "Popular lakeside destination."]
+    ]
+};
+
+async function searchCity(event) {
+    if (event) event.preventDefault();
+
+    const city = $("city").value.trim();
+    if (!city) return;
+
+    $("status").textContent = "Searching for " + city + "...";
+    $("weather").hidden = true;
+
+    try {
+        // API 1: Convert city name into coordinates.
+        const geoURL =
+            "https://geocoding-api.open-meteo.com/v1/search?name=" +
+            encodeURIComponent(city) +
+            "&count=1&language=en&format=json";
+
+        const geoResponse = await fetch(geoURL);
+        if (!geoResponse.ok) throw new Error("Location API failed");
+
+        const geoData = await geoResponse.json();
+        if (!geoData.results || !geoData.results.length) {
+            throw new Error("City not found. Try another city.");
+        }
+
+        const place = geoData.results[0];
+        currentCity = place.name;
+
+        $("status").textContent =
+            "Destination: " + place.name +
+            (place.admin1 ? ", " + place.admin1 : "") +
+            (place.country ? ", " + place.country : "");
+
+        // API 2: Get current weather.
+        const weatherURL =
+            "https://api.open-meteo.com/v1/forecast?latitude=" +
+            place.latitude + "&longitude=" + place.longitude +
+            "&current=temperature_2m,relative_humidity_2m," +
+            "apparent_temperature,wind_speed_10m&timezone=auto";
+
+        const weatherResponse = await fetch(weatherURL);
+        if (!weatherResponse.ok) throw new Error("Weather API failed");
+
+        const weatherData = await weatherResponse.json();
+        const w = weatherData.current;
+
+        $("weather").innerHTML = `
+            <h3>Weather in ${escapeHTML(place.name)}</h3>
+            <p><strong>Temperature:</strong> ${w.temperature_2m} °C</p>
+            <p><strong>Feels like:</strong> ${w.apparent_temperature} °C</p>
+            <p><strong>Humidity:</strong> ${w.relative_humidity_2m}%</p>
+            <p><strong>Wind speed:</strong> ${w.wind_speed_10m} km/h</p>
+            <small>Weather observation time: ${escapeHTML(w.time)}</small>
+        `;
+        $("weather").hidden = false;
+
+        // Show destination on OpenStreetMap.
+        const lat = place.latitude;
+        const lon = place.longitude;
+        const bbox = [
+            lon - 0.10, lat - 0.07,
+            lon + 0.10, lat + 0.07
+        ].join(",");
+
+        $("map").src =
+            "https://www.openstreetmap.org/export/embed.html?bbox=" +
+            bbox + "&layer=mapnik&marker=" + lat + "," + lon;
+
+        $("mapCaption").textContent = "Map of " + place.name;
+        $("mapLink").href =
+            "https://www.openstreetmap.org/?mlat=" + lat +
+            "&mlon=" + lon + "#map=12/" + lat + "/" + lon;
+
+        showPlaces(place.name);
+
+    } catch (error) {
+        $("status").textContent = error.message ||
+            "Unable to load destination data. Check your internet connection.";
+    }
+}
+
+function escapeHTML(value) {
+    return String(value).replace(/[&<>"']/g, char => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;"
+    })[char]);
+}
+
+function showPlaces(city) {
+    const list = samplePlaces[city.toLowerCase()] || [
+        ["Explore the City Centre", "Discover the local area."],
+        ["Visit a Local Museum", "Learn about local history."],
+        ["Explore Local Food", "Try regional cuisine."]
+    ];
+
+    $("places").innerHTML = "";
+
+    list.forEach(([name, description]) => {
+        const card = document.createElement("div");
+        card.className = "place";
+
+        const title = document.createElement("h3");
+        title.textContent = name;
+
+        const paragraph = document.createElement("p");
+        paragraph.textContent = description;
+
+        const button = document.createElement("button");
+        button.textContent = "Add to Plan";
+        button.type = "button";
+        button.addEventListener("click", () =>
+            addActivity("Visit " + name)
+        );
+
+        card.append(title, paragraph, button);
+        $("places").appendChild(card);
+    });
+}
+
+function addActivity(name) {
+    activities.push(name);
+    renderPlan();
+}
+
+function addCustomActivity() {
+    const value = $("activity").value.trim();
+    if (!value) {
+        $("planStatus").textContent = "Enter an activity first.";
+        return;
+    }
+    addActivity(value);
+    $("activity").value = "";
+    $("planStatus").textContent = "";
+}
+
+function renderPlan() {
+    $("itinerary").innerHTML = "";
+
+    activities.forEach((activity, index) => {
+        const li = document.createElement("li");
+        const text = document.createElement("span");
+        text.textContent = activity + " ";
+
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "remove";
+        button.textContent = "Remove";
+        button.addEventListener("click", () => {
+            activities.splice(index, 1);
+            renderPlan();
+        });
+
+        li.append(text, button);
+        $("itinerary").appendChild(li);
+    });
+
+    const date = $("tripDate").value || "Not selected";
+    const budget = $("budget").value
+        ? "₹" + Number($("budget").value).toLocaleString("en-IN")
+        : "Not entered";
+
+    $("tripDetails").textContent =
+        "Destination: " + currentCity +
+        " | Date: " + date +
+        " | Budget: " + budget +
+        " | Activities: " + activities.length;
+}
+
+function savePlan() {
+    const plan = {
+        destination: currentCity,
+        date: $("tripDate").value,
+        budget: $("budget").value,
+        activities: activities
+    };
+
+    try {
+        localStorage.setItem("travelPlannerPlan", JSON.stringify(plan));
+        $("planStatus").textContent = "Plan saved in this browser.";
+    } catch (error) {
+        $("planStatus").textContent =
+            "Unable to save. Browser storage may be disabled.";
+    }
+}
+
+function copyPlan() {
+    const text = [
+        "TRAVEL PLAN",
+        "Destination: " + currentCity,
+        "Travel date: " + ($("tripDate").value || "Not selected"),
+        "Budget: " + ($("budget").value
+            ? "₹" + $("budget").value : "Not entered"),
+        "Activities:",
+        ...activities.map((a, i) => (i + 1) + ". " + a)
+    ].join("\n");
+
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text)
+            .then(() => $("planStatus").textContent =
+                "Plan copied to clipboard.")
+            .catch(() => fallbackCopy(text));
+    } else {
+        fallbackCopy(text);
+    }
+}
+
+function fallbackCopy(text) {
+    const area = document.createElement("textarea");
+    area.value = text;
+    document.body.appendChild(area);
+    area.select();
+
+    try {
+        const copied = document.execCommand("copy");
+        $("planStatus").textContent = copied
+            ? "Plan copied to clipboard."
+            : "Copy failed. Please select and copy the plan manually.";
+    } catch {
+        $("planStatus").textContent =
+            "Copy failed. Please copy the plan manually.";
+    }
+    area.remove();
+}
+
+function clearPlan() {
+    activities = [];
+    renderPlan();
+    $("planStatus").textContent = "Activities cleared.";
+}
+
+$("searchForm").addEventListener("submit", searchCity);
+
+try {
+    const saved = localStorage.getItem("travelPlannerPlan");
+    if (saved) {
+        const plan = JSON.parse(saved);
+        if (plan && Array.isArray(plan.activities)) {
+            currentCity = typeof plan.destination === "string"
+                ? plan.destination : "Mumbai";
+            activities = plan.activities.filter(
+                item => typeof item === "string"
+            );
+            $("city").value = currentCity;
+            $("tripDate").value = plan.date || "";
+            $("budget").value = plan.budget || "";
+            renderPlan();
+        }
+    }
+} catch (error) {
+    console.warn("Saved plan could not be loaded.");
+}
+</script>
+
+</body>
+</html>
